@@ -1,13 +1,19 @@
 package com.markstart.urlshortener.service;
 
 import com.markstart.urlshortener.dto.ShortenUrlRequest;
+import com.markstart.urlshortener.dto.UrlSummaryResponse;
 import com.markstart.urlshortener.exception.AliasAlreadyExistsException;
+import com.markstart.urlshortener.exception.AliasNotFoundException;
 import com.markstart.urlshortener.model.UrlMapping;
 import com.markstart.urlshortener.repository.UrlMappingRepository;
+import com.markstart.urlshortener.util.UrlBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.util.List;
+
 import static com.markstart.urlshortener.util.Constants.MAX_CUSTOM_ALIAS_LENGTH;
 
 
@@ -21,6 +27,7 @@ public class UrlShortenerService {
     private static final int MAX_GENERATION_ATTEMPTS = 8;
 
     private final UrlMappingRepository urlMappingRepository;
+    private final UrlBuilder urlBuilder;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public String createAndSaveUrlMapping(ShortenUrlRequest request) {
@@ -42,7 +49,9 @@ public class UrlShortenerService {
 
         urlMappingRepository.save(urlMapping);
 
-        return alias;
+        String shortUrl = urlBuilder.buildShortUrl(alias);
+
+        return shortUrl;
 
     }
 
@@ -85,5 +94,47 @@ public class UrlShortenerService {
         }
 
     }
+
+
+
+    public UrlMapping getUrlMappingByAlias(String alias) {
+
+        return urlMappingRepository.findByAlias(alias)
+                .orElseThrow(() -> new AliasNotFoundException(alias));
+
+    }
+
+
+    @Transactional
+    public void deleteUrlMappingByAlias(String alias) {
+
+        if (!urlMappingRepository.existsByAlias(alias)) {
+            throw new AliasNotFoundException(alias);
+        }
+
+        urlMappingRepository.deleteByAlias(alias);
+
+    }
+
+
+    public List<UrlSummaryResponse> getAllUrlSummaries() {
+
+        return urlMappingRepository.findAll()
+                .stream()
+                .map(this::toUrlSummaryResponse)
+                .toList();
+
+    }
+
+    private UrlSummaryResponse toUrlSummaryResponse(UrlMapping urlMapping) {
+
+        return new UrlSummaryResponse(
+                urlMapping.getAlias(),
+                urlMapping.getFullUrl(),
+                urlBuilder.buildShortUrl(urlMapping.getAlias())
+        );
+
+    }
+
 
 }

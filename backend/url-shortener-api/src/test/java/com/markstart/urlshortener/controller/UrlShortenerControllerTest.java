@@ -2,6 +2,9 @@ package com.markstart.urlshortener.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markstart.urlshortener.dto.ShortenUrlRequest;
+import com.markstart.urlshortener.dto.UrlSummaryResponse;
+import com.markstart.urlshortener.exception.AliasNotFoundException;
+import com.markstart.urlshortener.model.UrlMapping;
 import com.markstart.urlshortener.service.UrlShortenerService;
 import com.markstart.urlshortener.controller.validator.UrlShortenerRequestValidator;
 import org.junit.jupiter.api.Test;
@@ -15,13 +18,17 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.stream.Stream;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.doThrow;
+
 
 
 @WebMvcTest(UrlShortenerController.class)
@@ -66,8 +73,10 @@ class UrlShortenerControllerTest {
     @MethodSource("validRequests")
     void validShortenUrlRequests_return201Created(ShortenUrlRequest request) throws Exception {
 
+        String testShortUrl = "http://localhost:8080/test-alias";
+
         when(urlShortenerService.createAndSaveUrlMapping(any(ShortenUrlRequest.class)))
-                .thenReturn(request.getCustomAlias());
+                .thenReturn(testShortUrl);
 
         mockMvc.perform(post("/shorten")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -108,6 +117,122 @@ class UrlShortenerControllerTest {
                 .andExpect(status().isBadRequest());
 
     }
+
+
+
+
+
+
+
+
+
+
+
+
+    @Test
+    void getByAlias_whenAliasExists_returns302RedirectToFullUrl() throws Exception {
+
+        String testAlias = "test-alias";
+        String fullUrl = "https://example.com/very/long/url";
+
+        UrlMapping urlMapping = UrlMapping.builder()
+                .alias(testAlias)
+                .fullUrl(fullUrl)
+                .build();
+
+        when(urlShortenerService.getUrlMappingByAlias(testAlias))
+                .thenReturn(urlMapping);
+
+        mockMvc.perform(get("/" + testAlias))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", fullUrl));
+    }
+
+
+
+
+
+    @Test
+    void getByAlias_whenAliasDoesNotExist_returns404NotFound() throws Exception {
+
+        String missingAlias = "missing-alias";
+
+        when(urlShortenerService.getUrlMappingByAlias(missingAlias))
+                .thenThrow(new AliasNotFoundException(missingAlias));
+
+        mockMvc.perform(get("/" + missingAlias ))
+                .andExpect(status().isNotFound());
+    }
+
+
+
+
+
+    @Test
+    void deleteByAlias_whenAliasExists_returns204NoContent() throws Exception {
+
+        String alias = "test-alias";
+
+        doNothing().when(urlShortenerService).deleteUrlMappingByAlias(alias);
+
+        mockMvc.perform(delete("/" + alias))
+                .andExpect(status().isNoContent());
+
+    }
+
+
+
+    @Test
+    void deleteByAlias_whenAliasDoesNotExist_returns404NotFound() throws Exception {
+
+        String missingAlias = "missing-alias";
+
+        doThrow(new AliasNotFoundException(missingAlias))
+                .when(urlShortenerService)
+                .deleteUrlMappingByAlias(missingAlias);
+
+        mockMvc.perform(delete("/" + missingAlias))
+                .andExpect(status().isNotFound());
+    }
+
+
+
+    @Test
+    void getAllUrls_returns200OkAndListOfUrlSummaries() throws Exception {
+
+        List<UrlSummaryResponse> responses = List.of(
+                new UrlSummaryResponse(
+                        "first-alias",
+                        "https://example.com/first/long/url",
+                        "http://localhost:8080/first-alias"
+                ),
+                new UrlSummaryResponse(
+                        "second-alias",
+                        "https://example.com/second/long/url",
+                        "http://localhost:8080/second-alias"
+                )
+        );
+
+        when(urlShortenerService.getAllUrlSummaries()).thenReturn(responses);
+
+        mockMvc.perform(get("/urls"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].alias").value("first-alias"))
+                .andExpect(jsonPath("$[0].fullUrl").value("https://example.com/first/long/url"))
+                .andExpect(jsonPath("$[0].shortUrl").value("http://localhost:8080/first-alias"))
+                .andExpect(jsonPath("$[1].alias").value("second-alias"))
+                .andExpect(jsonPath("$[1].fullUrl").value("https://example.com/second/long/url"))
+                .andExpect(jsonPath("$[1].shortUrl").value("http://localhost:8080/second-alias"));
+    }
+
+
+
+
+
+
+
 
 
 }

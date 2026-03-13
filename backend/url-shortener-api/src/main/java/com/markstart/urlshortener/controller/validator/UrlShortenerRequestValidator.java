@@ -21,6 +21,8 @@ public class UrlShortenerRequestValidator {
 
         // starts with and ends with character no white space check
 
+        // todo: simplify / test
+
         try {
 
             URI uri = URI.create(fullUrl.trim());
