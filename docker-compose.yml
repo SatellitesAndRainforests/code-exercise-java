@@ -1,0 +1,25 @@
+services:
+
+  backend:
+    build:
+      context: backend/url-shortener-api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/app/data/urlshortenerdb
+      APP_BASE_URL: http://localhost:8080
+    volumes:
+      - backend-data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  backend-data:

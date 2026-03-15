@@ -3,7 +3,7 @@ spring:
     name: url-shortener-api
 
   datasource:
-    url: jdbc:h2:file:./data/urlshortenerdb
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/urlshortenerdb}
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -18,4 +18,5 @@ spring:
       enabled: true
 
 app:
-   base-url: http://localhost:8080
+   base-url: ${APP_BASE_URL:http://localhost:8080}
+
