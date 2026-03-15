@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+
+<main class="container">
+
+    <h1>URL Shortener</h1>
+    <p class="subtitle">Create, view, and delete shortened URLs.</p>
+
+    <section class="card">
+
+        <h2>Create short URL</h2>
+
+        <form id="shorten-form">
+
+            <label for="fullUrl">Full URL</label>
+
+            <input
+                    id="fullUrl"
+                    name="fullUrl"
+                    type="url"
+                    placeholder="https://example.com/very/long/url"
+                    required
+            >
+
+            <label for="customAlias">Custom alias (optional)</label>
+
+            <input
+                    id="customAlias"
+                    name="customAlias"
+                    type="text"
+                    placeholder="my-custom-alias"
+            >
+
+            <button type="submit">Shorten URL</button>
+
+        </form>
+
+        <p id="success-message" class="success hidden"></p>
+        <p id="error-message" class="error hidden"></p>
+
+    </section>
+
+    <section class="card">
+
+        <div class="section-header">
+
+            <h2>Saved URLs</h2>
+
+            <button id="refresh-button" type="button">Refresh</button>
+
+        </div>
+
+        <div class="table-wrapper">
+
+            <table>
+                <thead>
+                <tr>
+                    <th>Alias</th>
+                    <th>Full URL</th>
+                    <th>Short URL</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="urls-table-body">
+                <tr>
+                    <td colspan="4">No URLs loaded yet.</td>
+                </tr>
+                </tbody>
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script src="/app.js"></script>
+
+</body>
+
+</html>
