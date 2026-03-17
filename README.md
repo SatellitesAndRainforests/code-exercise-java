@@ -1,44 +1,258 @@
-# URL Shortener Coding Exercise
+# URL Shortener
 
-## Task
+A simple URL shortener
 
-Build a simple **URL shortener** in a **preferably JVM-based language** (e.g. Java, Kotlin).
+It provides:
+- a REST API for creating, redirecting, listing, and deleting shortened URLs
+- file-based persistence using H2
+- a minimal decoupled frontend for interacting with the API
+- automated tests
+- Docker support for running the full application locally
 
-It should:
+## Tech stack
 
-- Accept a full URL and return a shortened URL.
-- A shortened URL should have a randomly generated alias.
-- Allow a user to **customise the shortened URL** if they want to (e.g. user provides `my-custom-alias` instead of a random string).
-- Persist the shortened URLs across restarts.
-- Expose a **decoupled web frontend** built with a modern framework (e.g., React, Next.js, Vue.js, Angular, Flask with templates). This can be lightweight form/output just to demonstrate interaction with the API. Feel free to use UI frameworks like Bootstrap, Material-UI, Tailwind CSS, GOV.UK design system, etc. to speed up development.
-- Expose a **RESTful API** to perform create/read/delete operations on URLs.  
-  → Refer to the provided [`openapi.yaml`](./openapi.yaml) for API structure and expected behaviour.
-- Include the ability to **delete a shortened URL** via the API.
-- **Have tests**.
-- Be containerised (e.g. Docker).
-- Include instructions for running locally.
+### Backend
+- Java 17
+- Spring Boot 3.5.11
+- Maven
+- Spring Web
+- Spring Validation
+- Spring Data JPA
+- H2 (file-based)
+- Lombok
 
-## Rules
+### Frontend
+- Node.js
+- Express
+- Static HTML / CSS / JavaScript
 
-- Fork the repository and work in your fork. Do not push directly to the main repository.
-- There is no time limit, we want to see something you are proud of. We would like to understand roughly how long you spent on it though.
-- **Commit often with meaningful messages.**
-- Write tests.
-- The API should validate inputs and handle errors gracefully.
-- The Frontend should show errors from the API appropriately.
-- Use the provided [`openapi.yaml`](./openapi.yaml) as the API contract.
-- Focus on clean, maintainable code.
-- AI tools (e.g., GitHub Copilot, ChatGPT) are allowed, but please **do not** copy-paste large chunks of code. Use them as assistants, not as a replacement for your own work. We will be asking.
+## API summary
 
-## Deliverables
+The API follows the provided `openapi.yaml`.
 
-- Working software.
-- Decoupled web frontend (using a modern framework like React, Next.js, Vue.js, Angular, or Flask with templates).
-- RESTful API matching the OpenAPI spec.
-- Tests.
-- A git commit history that shows your thought process.
-- Dockerfile.
-- README with:
-  - How to build and run locally.
-  - Example usage (frontend and API).
-  - Any notes or assumptions.
+### `POST /shorten`
+Creates a shortened URL.
+
+Request body:
+
+```json
+{
+  "fullUrl": "https://example.com/very/long/url",
+  "customAlias": "my-custom-alias"  // optional
+}
+```
+
+Response (`201 Created`):
+
+```json
+{
+  "shortUrl": "http://localhost:8080/my-custom-alias" // or a randomly generated alias
+}
+```
+
+### `GET /{alias}`
+Redirects to the original URL.
+
+Response:
+- `302 Found` if alias exists
+- `404 Not Found` if alias does not exist
+
+### `DELETE /{alias}`
+Deletes a shortened URL mapping from persistence.
+
+Response:
+- `204 No Content` if deleted
+- `404 Not Found` if alias does not exist
+
+### `GET /urls`
+Returns all shortened URLs.
+
+Response (`200 OK`):
+
+```json
+[
+  {
+    "alias": "my-custom-alias",
+    "fullUrl": "https://example.com/very/long/url",
+    "shortUrl": "http://localhost:8080/my-custom-alias"
+  },
+  {
+    "alias": "kqmdz-plnvrtaeuw",
+    "fullUrl": "https://example.org/another/long/url",
+    "shortUrl": "http://localhost:8080/kqmdz-plnvrtaeuw"
+  }
+]
+```
+
+
+
+## Design notes
+
+- `shortUrl` is not persisted
+- persisted fields are:
+  - `alias`
+  - `fullUrl`
+- `shortUrl` is derived as `base-url + "/" + alias`
+- base-url is read from the environment by the `APP_BASE_URL` or is the default `http://localhost:8080/`
+- example:
+  - `fullUrl = https://example.com/very/long/url`
+  - `alias = my-custom-alias`
+  - `shortUrl = http://localhost:8080/my-custom-alias`
+
+### Alias rules
+
+Custom aliases are optional and validated as follows:
+- lowercase letters and hyphens only
+- must start and end with a lowercase letter
+- no consecutive hyphens
+- max length: 16 characters
+
+## Validation and error handling
+
+- DTO validation handles basic field validation
+- API  layer request validation checks that `fullUrl` is a valid absolute `http` or `https` URL
+- business rules such as alias uniqueness are handled in the service layer
+- API errors are returned as JSON error responses
+
+Example error response:
+
+```json
+{
+  "error": "Alias already exists: my-custom-alias"
+}
+```
+
+
+
+## Running with Docker Compose
+
+From the repository root:
+
+```bash
+docker-compose up --build
+```
+
+Services:
+- frontend: `http://localhost:3000`
+- backend: `http://localhost:8080`
+
+The backend uses a Docker volume for H2 file persistence.
+
+To stop containers:
+
+```bash
+docker-compose down
+```
+
+To stop containers and remove the persisted database volume:
+
+```bash
+docker-compose down -v
+```
+
+
+
+## Running locally without Docker
+
+### Prerequisites
+- Java 17
+- Maven
+- Node.js and npm
+
+### Backend
+From `backend/url-shortener-api/`:
+
+```bash
+./mvnw spring-boot:run
+```
+
+### Tests
+can be run at the same location by:
+
+```bash
+./mvnw test
+```
+
+
+Backend runs on:
+
+```text
+http://localhost:8080
+```
+
+### Frontend
+From the `frontend/` directory:
+
+```bash
+npm ci
+npm start
+```
+
+Frontend runs on:
+
+```text
+http://localhost:3000
+```
+
+and can be accessed by opening `http://localhost:3000` in a browser
+
+## Frontend
+
+A minimal decoupled frontend is included, it supports:
+- creating short URLs
+- listing saved URL mappings
+- deleting saved URL mappings
+- showing API success and error messages
+
+The frontend is served separately, 
+the browser essentially retrieves the static web pages 
+from the frontend docker container and calls the API directly from the browser.
+
+
+## Assumptions / scope
+
+- aliases are unique across all saved URL mappings.
+- a url can have many aliases.
+- H2 file-based persistence being sufficient for this exercise
+
+## Notes
+
+This submission intentionally keeps the solution simple and focused on the requirements:
+- manual implementation from the provided OpenAPI contract
+- backend-first approach
+- minimal decoupled frontend
+- simple Docker setup
+
+Time spent: approximately ~15 hours across several sessions.
+
+
+
+
+## Example usage
+
+### Create a short URL
+```bash
+curl -i -X POST http://localhost:8080/shorten \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullUrl": "https://example.com/very/long/url",
+    "customAlias": "my-custom-alias"
+  }'
+```
+
+### Redirect using alias
+```bash
+curl -i http://localhost:8080/my-custom-alias
+```
+
+### List all shortened URLs
+```bash
+curl -i http://localhost:8080/urls
+```
+
+### Delete an alias
+```bash
+curl -i -X DELETE http://localhost:8080/my-custom-alias
+```
+
+ 
