@@ -17,8 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
-import static com.markstart.urlshortener.util.Constants.CUSTOM_ALIAS_REGEX;
-import static com.markstart.urlshortener.util.Constants.MAX_CUSTOM_ALIAS_LENGTH;
+import static com.markstart.urlshortener.util.Constants.ALIAS_REGEX;
+import static com.markstart.urlshortener.util.Constants.MAX_ALIAS_LENGTH;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -35,6 +35,8 @@ class UrlShortenerServiceTest {
     @InjectMocks
     private UrlShortenerService urlShortenerService;
 
+
+    // - - post
 
     @Test
     void whenCustomAliasIsAvailable_savesUrlMappingAndReturnsShortUrl() {
@@ -116,8 +118,8 @@ class UrlShortenerServiceTest {
         String generatedAlias = savedMapping.getAlias();
 
         assertNotNull(createdShortUrl );
-        assertEquals(MAX_CUSTOM_ALIAS_LENGTH, generatedAlias.length());
-        assertTrue(generatedAlias.matches(CUSTOM_ALIAS_REGEX));
+        assertEquals(MAX_ALIAS_LENGTH, generatedAlias.length());
+        assertTrue(generatedAlias.matches(ALIAS_REGEX));
 
         String expectedShortUrl = testBaseUrl + generatedAlias;
 
@@ -154,8 +156,8 @@ class UrlShortenerServiceTest {
         String generatedAlias = savedMapping.getAlias();
 
         assertNotNull(generatedAlias);
-        assertEquals(MAX_CUSTOM_ALIAS_LENGTH, generatedAlias.length());
-        assertTrue(generatedAlias.matches(CUSTOM_ALIAS_REGEX));
+        assertEquals(MAX_ALIAS_LENGTH, generatedAlias.length());
+        assertTrue(generatedAlias.matches(ALIAS_REGEX));
         assertEquals(request.getFullUrl(), savedMapping.getFullUrl());
 
         String expectedShortUrl = testBaseUrl + generatedAlias;
@@ -188,9 +190,7 @@ class UrlShortenerServiceTest {
     }
 
 
-
-
-
+    // - - get
 
     @Test
     void whenAliasExists_getUrlMappingByAlias_returnsUrlMapping() {
@@ -232,9 +232,7 @@ class UrlShortenerServiceTest {
     }
 
 
-
-
-
+    // - - delete
 
     @Test
     void whenAliasExists_deleteUrlMappingByAlias_deletesUrlMapping() {
@@ -251,8 +249,6 @@ class UrlShortenerServiceTest {
         verify(urlMappingRepository).deleteByAlias(alias);
 
     }
-
-
 
     @Test
     void whenAliasDoesNotExist_deleteUrlMappingByAlias_throwsAliasNotFoundException() {
@@ -271,9 +267,7 @@ class UrlShortenerServiceTest {
     }
 
 
-
-
-
+    // - - getAllUrls
 
     @Test
     void getAllUrlSummaries_returnsMappedResponses() {
@@ -304,8 +298,5 @@ class UrlShortenerServiceTest {
         assertThat(result.get(1).getFullUrl()).isEqualTo("https://example.com/second/long/url");
         assertThat(result.get(1).getShortUrl()).isEqualTo("http://localhost:8080/second-alias");
     }
-
-
-
 
 }

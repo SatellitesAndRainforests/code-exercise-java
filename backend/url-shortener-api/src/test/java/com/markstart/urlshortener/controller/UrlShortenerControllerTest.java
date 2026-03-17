@@ -9,7 +9,6 @@ import com.markstart.urlshortener.service.UrlShortenerService;
 import com.markstart.urlshortener.controller.validator.UrlShortenerRequestValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -30,7 +29,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.mockito.Mockito.doThrow;
 
 
-
 @WebMvcTest(UrlShortenerController.class)
 @Import(UrlShortenerRequestValidator.class)
 class UrlShortenerControllerTest {
@@ -42,6 +40,7 @@ class UrlShortenerControllerTest {
     @MockitoBean
     private UrlShortenerService urlShortenerService;
 
+    // - - post
 
     static Stream<ShortenUrlRequest> validRequests() {
 
@@ -84,7 +83,6 @@ class UrlShortenerControllerTest {
                 .andExpect(status().isCreated());
     }
 
-
     static Stream<ShortenUrlRequest> invalidRequests() {
 
         ShortenUrlRequest request1 = new ShortenUrlRequest();
@@ -118,16 +116,7 @@ class UrlShortenerControllerTest {
 
     }
 
-
-
-
-
-
-
-
-
-
-
+    // -- get
 
     @Test
     void getByAlias_whenAliasExists_returns302RedirectToFullUrl() throws Exception {
@@ -148,10 +137,6 @@ class UrlShortenerControllerTest {
                 .andExpect(header().string("Location", fullUrl));
     }
 
-
-
-
-
     @Test
     void getByAlias_whenAliasDoesNotExist_returns404NotFound() throws Exception {
 
@@ -164,9 +149,7 @@ class UrlShortenerControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-
-
-
+    // -- delete
 
     @Test
     void deleteByAlias_whenAliasExists_returns204NoContent() throws Exception {
@@ -179,8 +162,6 @@ class UrlShortenerControllerTest {
                 .andExpect(status().isNoContent());
 
     }
-
-
 
     @Test
     void deleteByAlias_whenAliasDoesNotExist_returns404NotFound() throws Exception {
@@ -195,7 +176,7 @@ class UrlShortenerControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-
+    // - - getAllUrls
 
     @Test
     void getAllUrls_returns200OkAndListOfUrlSummaries() throws Exception {
@@ -226,13 +207,5 @@ class UrlShortenerControllerTest {
                 .andExpect(jsonPath("$[1].fullUrl").value("https://example.com/second/long/url"))
                 .andExpect(jsonPath("$[1].shortUrl").value("http://localhost:8080/second-alias"));
     }
-
-
-
-
-
-
-
-
 
 }

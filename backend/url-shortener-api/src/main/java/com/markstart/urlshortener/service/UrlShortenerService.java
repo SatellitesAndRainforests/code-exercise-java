@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.util.List;
 
-import static com.markstart.urlshortener.util.Constants.MAX_CUSTOM_ALIAS_LENGTH;
+import static com.markstart.urlshortener.util.Constants.MAX_ALIAS_LENGTH;
 
 
 @Service
@@ -23,7 +23,7 @@ public class UrlShortenerService {
 
     private static final String VALID_ALIAS_END_CHARACTERS = "abcdefghijklmnopqrstuvwxyz";
     private static final String VALID_ALIAS_MIDDLE_CHARACTERS = "-abcdefghijklmnopqrstuvwxyz";
-    private static final int ALIAS_LENGTH = MAX_CUSTOM_ALIAS_LENGTH;
+    private static final int ALIAS_LENGTH = MAX_ALIAS_LENGTH;
     private static final int MAX_GENERATION_ATTEMPTS = 8;
 
     private final UrlMappingRepository urlMappingRepository;
@@ -66,9 +66,20 @@ public class UrlShortenerService {
             for (int i = 0; i < ALIAS_LENGTH; i++) {
 
                 if (i == 0 || i == ALIAS_LENGTH - 1) {
-                    stringBuilder.append(VALID_ALIAS_END_CHARACTERS.charAt(secureRandom.nextInt(VALID_ALIAS_END_CHARACTERS.length())));
+
+                    stringBuilder.append(randomAliasEndCharacter());
+
                 } else {
-                    stringBuilder.append(VALID_ALIAS_MIDDLE_CHARACTERS.charAt(secureRandom.nextInt(VALID_ALIAS_MIDDLE_CHARACTERS.length())));
+
+                    char previousCharacter = stringBuilder.charAt(i-1);
+
+                    if (previousCharacter == '-') {
+                        stringBuilder.append(randomAliasEndCharacter());
+                    }
+                    else {
+                        stringBuilder.append(randomAliasMiddleCharacter());
+                    }
+
                 }
 
             }
@@ -87,6 +98,18 @@ public class UrlShortenerService {
 
     }
 
+    private char randomAliasEndCharacter() {
+        return VALID_ALIAS_END_CHARACTERS.charAt(
+                secureRandom.nextInt(VALID_ALIAS_END_CHARACTERS.length())
+        );
+    }
+
+    private char randomAliasMiddleCharacter() {
+        return VALID_ALIAS_MIDDLE_CHARACTERS.charAt(
+                secureRandom.nextInt(VALID_ALIAS_MIDDLE_CHARACTERS.length())
+        );
+    }
+
     private void checkCustomAliasAvailable(String customAlias) {
 
         if (urlMappingRepository.existsByAlias(customAlias)) {
@@ -95,15 +118,12 @@ public class UrlShortenerService {
 
     }
 
-
-
     public UrlMapping getUrlMappingByAlias(String alias) {
 
         return urlMappingRepository.findByAlias(alias)
                 .orElseThrow(() -> new AliasNotFoundException(alias));
 
     }
-
 
     @Transactional
     public void deleteUrlMappingByAlias(String alias) {
@@ -115,7 +135,6 @@ public class UrlShortenerService {
         urlMappingRepository.deleteByAlias(alias);
 
     }
-
 
     public List<UrlSummaryResponse> getAllUrlSummaries() {
 
@@ -135,6 +154,5 @@ public class UrlShortenerService {
         );
 
     }
-
 
 }

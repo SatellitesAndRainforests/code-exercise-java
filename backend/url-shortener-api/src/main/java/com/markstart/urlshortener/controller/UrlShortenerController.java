@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 
+
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequiredArgsConstructor
@@ -26,9 +27,10 @@ public class UrlShortenerController {
     @PostMapping("/shorten")
     public ResponseEntity<ShortenUrlResponse> shortenUrl(@Valid @RequestBody ShortenUrlRequest request) {
 
-        urlShortenerRequestValidator.validateRequest(request);
+        ShortenUrlRequest normalizedRequest =
+                urlShortenerRequestValidator.normalizeAndValidateRequest(request);
 
-        String shortUrl = urlShortenerService.createAndSaveUrlMapping(request);
+        String shortUrl = urlShortenerService.createAndSaveUrlMapping(normalizedRequest);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -36,9 +38,10 @@ public class UrlShortenerController {
 
     }
 
-
     @GetMapping("/{alias}")
     public ResponseEntity<Void> redirectToFullUrl(@PathVariable String alias) {
+
+        urlShortenerRequestValidator.validateAlias(alias);
 
         UrlMapping urlMapping = urlShortenerService.getUrlMappingByAlias(alias);
 
@@ -46,19 +49,19 @@ public class UrlShortenerController {
                 .status(HttpStatus.FOUND)
                 .location(URI.create(urlMapping.getFullUrl()))
                 .build();
+
     }
 
     @DeleteMapping("/{alias}")
     public ResponseEntity<Void> deleteByAlias(@PathVariable String alias) {
+
+        urlShortenerRequestValidator.validateAlias(alias);
 
         urlShortenerService.deleteUrlMappingByAlias(alias);
 
         return ResponseEntity.noContent().build();
 
     }
-
-
-
 
     @GetMapping("/urls")
     public ResponseEntity<List<UrlSummaryResponse>> getAllUrls() {
@@ -68,8 +71,5 @@ public class UrlShortenerController {
         return ResponseEntity.ok(responses);
 
     }
-
-
-
 
 }

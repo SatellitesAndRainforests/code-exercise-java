@@ -17,4 +17,5 @@ public final class UrlBuilder {
     public String buildShortUrl(String alias) {
         return baseUrl + "/" + alias;
     }
+
 }
