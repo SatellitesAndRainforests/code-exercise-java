@@ -9,6 +9,11 @@ It provides:
 - automated tests
 - Docker support for running the full application locally
 
+<img width="716" height="697" alt="Screenshot from 2026-03-17 12-26-03" src="https://github.com/user-attachments/assets/75dbc8b8-2647-45f4-b4b3-baadd24ff5a9" />
+
+[Screencast from 2026-03-17 13-43-47.webm](https://github.com/user-attachments/assets/316ce50f-27a9-4592-9a46-ae4ee8ea0569)
+
+
 ## Tech stack
 
 ### Backend
@@ -20,6 +25,8 @@ It provides:
 - Spring Data JPA
 - H2 (file-based)
 - Lombok
+
+
 
 ### Frontend
 - Node.js
